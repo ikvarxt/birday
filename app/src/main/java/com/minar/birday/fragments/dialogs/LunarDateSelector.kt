@@ -1,9 +1,10 @@
 package com.minar.birday.fragments.dialogs
 
+import android.app.Dialog
 import android.content.Context
-import android.view.LayoutInflater
+import android.os.Bundle
 import android.widget.NumberPicker
-import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.DialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.minar.birday.R
 import com.minar.birday.databinding.LayoutDateSelectorBinding
@@ -16,12 +17,17 @@ import java.time.LocalDate
 import kotlin.math.abs
 
 class LunarDateSelector(
-    context: Context,
-    placeholder: Lunar,
-) {
+    private val context: Context,
+    prefillDate: LocalDate = LocalDate.now(),
+    private val onSelect: (Long) -> Unit,
+) : DialogFragment() {
 
-    private val binding = LayoutDateSelectorBinding.inflate(LayoutInflater.from(context))
-    val view get() = binding.root
+    private val binding = LayoutDateSelectorBinding.inflate(layoutInflater)
+    private val dialogView get() = binding.root
+
+    private val placeholder = Solar(
+        prefillDate.year, prefillDate.monthValue, prefillDate.dayOfMonth
+    ).lunar
 
     // temporary data
     private var curYear: LunarYear = LunarYear(placeholder.year)
@@ -59,6 +65,16 @@ class LunarDateSelector(
             dayPicker.value = curDayIndex
             dayPicker.setOnValueChangedListener(dayChanged)
         }
+    }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        return MaterialAlertDialogBuilder(context).apply {
+            setTitle(context.getString(R.string.insert_date_hint))
+            setView(dialogView)
+            setPositiveButton(android.R.string.ok) { _, _ ->
+                onSelect(getSelection().toEpochDay() * 24 * 3600 * 1000)
+            }
+        }.create()
     }
 
     private fun NumberPicker.setupMonthPicker() {
@@ -122,32 +138,6 @@ class LunarDateSelector(
                 i++
             }
             return s.toString()
-        }
-
-        fun build(
-            context: Context,
-            date: LocalDate = LocalDate.now(),
-            onSelect: (Long) -> Unit,
-        ): AlertDialog {
-            return MaterialAlertDialogBuilder(context).apply {
-
-                setTitle(context.getString(R.string.insert_date_hint))
-                val solar = Solar(date.year, date.monthValue, date.dayOfMonth)
-                val selector = LunarDateSelector(context, solar.lunar)
-                setView(selector.view)
-
-                setPositiveButton(android.R.string.ok) { _, _ ->
-                    onSelect(selector.getSelection().toEpochDay() * 24 * 3600 * 1000)
-                }
-            }.create()
-        }
-
-        fun show(
-            context: Context,
-            date: LocalDate = LocalDate.now(),
-            onSelect: (Long) -> Unit
-        ) {
-            build(context, date, onSelect).show()
         }
     }
 }

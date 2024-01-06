@@ -18,9 +18,9 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -32,7 +32,6 @@ import com.minar.birday.R
 import com.minar.birday.activities.MainActivity
 import com.minar.birday.adapters.ContactsFilterArrayAdapter
 import com.minar.birday.databinding.BottomSheetInsertEventBinding
-import com.minar.birday.model.CalendarType
 import com.minar.birday.model.ContactInfo
 import com.minar.birday.model.Event
 import com.minar.birday.model.EventCode
@@ -244,8 +243,7 @@ class InsertEventBottomSheet(
         endDate.set(Calendar.DAY_OF_YEAR, endDate.getActualMaximum(Calendar.DAY_OF_YEAR))
         startDate.set(START_YEAR, 1, 1)
         val formatter: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
-        var dateDialog: MaterialDatePicker<Long>? = null
-        var lunarDateDialog: AlertDialog? = null
+        var dateDialog: DialogFragment? = null
 
         // To automatically show the last selected date, parse it to another Calendar object
         val lastDate = Calendar.getInstance()
@@ -262,15 +260,14 @@ class InsertEventBottomSheet(
 
         eventDate.setOnClickListener {
             // Prevent double dialogs on fast click
-            if (dateDialog != null || lunarDateDialog != null) return@setOnClickListener
+            if (dateDialog != null) return@setOnClickListener
 
-            val callbackAction = { it: Long? ->
-                val selection = it
-                if (selection != null) {
+            val callbackAction = { time: Long? ->
+                if (time != null) {
                     val date = Calendar.getInstance()
                     // Use a standard timezone to avoid wrong date on different time zones
                     date.timeZone = TimeZone.getTimeZone("UTC")
-                    date.timeInMillis = selection
+                    date.timeInMillis = time
                     val year = date.get(Calendar.YEAR)
                     val month = date.get(Calendar.MONTH) + 1
                     val day = date.get(Calendar.DAY_OF_MONTH)
@@ -297,11 +294,8 @@ class InsertEventBottomSheet(
                     get(Calendar.MONTH) + 1,
                     get(Calendar.DAY_OF_MONTH)
                 )
-                lunarDateDialog = LunarDateSelector.build(
-                    requireContext(),
-                    lastDate.toLocalDate(),
-                    callbackAction
-                )
+                dateDialog =
+                    LunarDateSelector(requireContext(), lastDate.toLocalDate(), callbackAction)
             } else {
                 // Build constraints
                 val constraints =
@@ -310,23 +304,19 @@ class InsertEventBottomSheet(
                         .setEnd(endDate.timeInMillis)
                         .build()
                 // Build the dialog itself
-                dateDialog =
-                    MaterialDatePicker.Builder.datePicker()
-                        .setTitleText(R.string.insert_date_hint)
-                        .setSelection(lastDate.timeInMillis)
-                        .setCalendarConstraints(constraints)
-                        .build()
-                // The user pressed ok
-                dateDialog!!.addOnPositiveButtonClickListener { callbackAction(it) }
+                dateDialog = MaterialDatePicker.Builder.datePicker()
+                    .setTitleText(R.string.insert_date_hint)
+                    .setSelection(lastDate.timeInMillis)
+                    .setCalendarConstraints(constraints)
+                    .build().apply {
+                        // The user pressed ok
+                        addOnPositiveButtonClickListener { callbackAction(it) }
+                    }
             }
 
             // Show the picker and wait to reset the variable
             dateDialog?.show(act.supportFragmentManager, "main_act_picker")
-            lunarDateDialog?.show()
-            Handler(Looper.getMainLooper()).postDelayed({
-                dateDialog = null
-                lunarDateDialog = null
-            }, 750)
+            Handler(Looper.getMainLooper()).postDelayed({ dateDialog = null }, 750)
         }
 
         // Validate each field in the form with the same watcher
