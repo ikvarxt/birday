@@ -212,6 +212,7 @@ fun getAvailableTypes(context: Context): List<EventType> {
         EventType(EventCode.ANNIVERSARY, context.getString(R.string.anniversary)),
         EventType(EventCode.DEATH, context.getString(R.string.death_anniversary)),
         EventType(EventCode.NAME_DAY, context.getString(R.string.name_day)),
+        EventType(EventCode.LUNAR_BIRTHDAY, "Lunar Birthday"),
         EventType(EventCode.OTHER, context.getString(R.string.other)),
     )
 }
@@ -224,6 +225,7 @@ fun getStringForTypeCodename(context: Context, codename: String): String {
             EventCode.ANNIVERSARY -> context.getString(R.string.anniversary)
             EventCode.DEATH -> context.getString(R.string.death_anniversary)
             EventCode.NAME_DAY -> context.getString(R.string.name_day)
+            EventCode.LUNAR_BIRTHDAY -> "Lunar Birthday"
             EventCode.OTHER -> context.getString(R.string.other)
         }
     } catch (e: Exception) {

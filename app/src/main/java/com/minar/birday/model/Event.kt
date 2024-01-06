@@ -31,6 +31,8 @@ data class Event(
     val notes: String? = "",
     @ColumnInfo(typeAffinity = ColumnInfo.BLOB)
     val image: ByteArray? = null,
+
+    val calendarType: CalendarType = if (type == EventCode.LUNAR_BIRTHDAY.name) CalendarType.Lunar else CalendarType.Default,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
