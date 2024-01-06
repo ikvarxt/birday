@@ -22,7 +22,7 @@ class LunarDateSelector(
     private val onSelect: (Long) -> Unit,
 ) : DialogFragment() {
 
-    private val binding = LayoutDateSelectorBinding.inflate(layoutInflater)
+    private lateinit var binding: LayoutDateSelectorBinding
     private val dialogView get() = binding.root
 
     private val placeholder = Solar(
@@ -52,7 +52,19 @@ class LunarDateSelector(
 
     private val dayChanged = { _: NumberPicker, _: Int, index: Int -> curDayIndex = index }
 
-    init {
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        binding = LayoutDateSelectorBinding.inflate(layoutInflater)
+        initViews()
+        return MaterialAlertDialogBuilder(context).apply {
+            setTitle(context.getString(R.string.insert_date_hint))
+            setView(dialogView)
+            setPositiveButton(android.R.string.ok) { _, _ ->
+                onSelect(getSelection().toEpochDay() * 24 * 3600 * 1000)
+            }
+        }.create()
+    }
+
+    private fun initViews() {
         binding.apply {
             yearPicker.fillData(yearStringList)
             yearPicker.value = curYear.year - yearRange.first
@@ -65,16 +77,6 @@ class LunarDateSelector(
             dayPicker.value = curDayIndex
             dayPicker.setOnValueChangedListener(dayChanged)
         }
-    }
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        return MaterialAlertDialogBuilder(context).apply {
-            setTitle(context.getString(R.string.insert_date_hint))
-            setView(dialogView)
-            setPositiveButton(android.R.string.ok) { _, _ ->
-                onSelect(getSelection().toEpochDay() * 24 * 3600 * 1000)
-            }
-        }.create()
     }
 
     private fun NumberPicker.setupMonthPicker() {
